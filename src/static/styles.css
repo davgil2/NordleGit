@@ -1,0 +1,16 @@
+#gameTable {
+    width: 100%; /* or any preferred width */
+    border-collapse: collapse;
+}
+
+#gameTable td {
+    border: 1px solid #000;
+    height: 50px; /* adjust as needed */
+    text-align: center;
+    cursor: pointer; /* make the cells look clickable */
+}
+
+.white { background-color: white; }
+.grey { background-color: grey; }
+.yellow { background-color: yellow; }
+.green { background-color: green; }

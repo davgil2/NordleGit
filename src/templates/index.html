@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nordle</title>
+    <style>
+        .green { background-color: green; }
+        .yellow { background-color: yellow; }
+        .grey { background-color: grey; }
+        table, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+        td {
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    input, button {
+        padding: 10px 20px;
+        font-size: 1.2rem;
+        margin: 5px 0;
+        max-width: 100%;
+        width: 300px;  /* Adjust this value as per your design needs */
+    }
+
+    #feedback {
+        width: 100%;
+        max-width: 500px;
+    }
+
+    #feedback td {
+        width: 20%;
+        text-align: center;
+        padding: 10px 0;
+        border: 1px solid #ddd;
+    }
+
+    @media screen and (max-width: 600px) {
+        body {
+            padding: 10px;
+        }
+
+        input, button {
+            width: 100%;
+        }
+    }
+    </style>
+</head>
+<body>
+    <h1>Nordle!</h1>
+    <input type="text" id="userGuess" maxlength="5">
+    <button onclick="makeGuess()">Gjett</button>
+
+    <table id="feedback">
+        <!-- This will contain the user's guesses and the corresponding feedback -->
+    </table>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+    attempts = 0;
+    document.getElementById('feedback').innerHTML = '';
+    document.getElementById('userGuess').value = '';
+});
+
+        function resetGame() {
+    attempts = 0;
+    document.getElementById('feedback').innerHTML = '';
+    document.getElementById('userGuess').value = '';
+    // Reload the page to start a new game
+    location.reload();
+}
+
+
+        let attempts = 0;
+
+        function makeGuess() {
+            if (attempts >= 6) {
+            alert("Du har brukt alle forsøk! Refresh siden for å spille igjen.");
+            return;
+        }
+
+    const word = document.getElementById('userGuess').value;
+    fetch('/guess', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ word: word })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'fail') {
+            alert(data.message);
+        } else if (data.status === 'gameover') {
+            alert(`Game over! Det riktige ordet var ${data.chosen_word}. Refresh siden for å spille igjen.`);
+        } else {
+            let row = document.createElement('tr');
+            word.split('').forEach((char, index) => {
+                let cell = document.createElement('td');
+                cell.className = data.feedback[index];
+                cell.textContent = char;
+                row.appendChild(cell);
+            });
+            document.getElementById('feedback').appendChild(row);
+            
+            if (data.feedback.every(val => val === 'green')) {
+                alert("Gratulerer! Du fant riktig ord.");
+                resetGame();
+            } else {
+                attempts++;
+                if (attempts >= 6) {
+                    // Just to be safe, ask the server for the word (in case there are delays or other issues)
+                    fetch('/guess', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ word: '' })  // Empty word to trigger the gameover state in server
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'gameover') {
+                            alert(`Game over! Det riktige ordet var ${data.chosen_word}. Refresh siden for å spille igjen.`);
+                            resetGame();
+                        }
+                    });
+                }
+            }
+        }
+    });
+}
+document.getElementById('userGuess').addEventListener('keydown', function(event) {
+    if (event.keyCode === 13) {  // 13 is the key code for Enter
+        event.preventDefault();  // Prevent the default action (form submission, if any)
+        makeGuess();
+    }
+});
+
+
+    </script>
+</body>
+</html>
